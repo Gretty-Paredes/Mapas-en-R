@@ -1,0 +1,120 @@
+---
+title: "Mapas en R"
+author: "Gretty Paredes"
+date: "2023-10-18"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    collapsed: true
+    smooth_scroll: true
+    theme: journal
+    highlight: kate
+    df_print: paged
+    code_folding: show
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+
+library(leaflet)
+library(htmlwidgets)
+library(leaflet.extras) 
+library(rworldxtra)
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Lenguaje de programación R
+
+**R** es un software libre para graficos, computación estadística y econometrica, que soporta tareas desde la forma mas simple, ya que nos permite dar instrucciones, usando código, a nuestros equipos de cómputo para que realicen tareas específicas <https://www.r-project.org/>.
+
+# Diseño de mapas en R
+
+**R**, ofrece un conjunto de librerías que facilitan la creación y personalización de mapas interactivos y estáticos.
+
+## Libreria leaflet
+
+Con **leaflet**, puedes agregar marcadores, poligonos, capas raster y otras anotaciones en el mapa. Además, es posible combinar **'leaflet'** con otras librerías, como 'shiny', para crear aplicaciones web interactivas que muestren datos geoespaciales.
+
+## Datos
+
+En este proyecto voy a trabajar con la dataframe de las provincias del departamento de Puno.
+
+```{r message=FALSE,warning=FALSE, fig.align='center',rows.print=8}
+mapa1 <- read.table("https://raw.githubusercontent.com/Gretty-Paredes/Mapas-en-R/master/Mapas%20Interactivos/13-provincias.txt",header =TRUE,sep=",")
+mapa1
+
+```
+
+## Generando mapa interactivo en R
+
+Iniciaremos creando los marcadores:
+
+```{r message=FALSE,warning=FALSE,pressure,fig.align='center', echo=FALSE}
+
+mapa1 <- read.table("https://raw.githubusercontent.com/Gretty-Paredes/Mapas-en-R/master/Mapas%20Interactivos/13-provincias.txt",header =TRUE,sep=",")
+
+##Generando el mapa 
+mapa1 %>%
+leaflet() %>%
+  addTiles() %>%
+  addHeatmap(data= mapa1,lat=mapa1$Latitud,lng=mapa1$Longitud,radius=9)%>%
+  addMiniMap()%>%
+  addResetMapButton()
+  
+
+```
+
+## Editando colores y marcadores
+
+```{r message=FALSE,warning=FALSE, fig.align='center'}
+# Colores y nombres de etiqueta
+colores <- c('#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
+             '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928')
+provin <- levels(as.factor(mapa1$Provincia))
+
+# Cambiando color
+paleta <- colorFactor(palette = colores, domain = provin)
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(data =mapa1, lat = ~Latitud, lng = ~Altitud,
+                   color = ~paleta(Capital), fill = 1)%>%
+  addMiniMap()%>%
+  addResetMapButton()
+
+
+```
+
+## Añadiendo popup
+
+```{r message=FALSE,warning=FALSE, fig.align='center'}
+leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(data =mapa1, lat = ~Latitud, lng = ~Longitud,
+                   color = ~paleta(Provincia), fill = 1,popup =~Provincia, label = ~Capital,group = "Provincias")%>%
+  addMiniMap()%>%
+  addResetMapButton()
+
+```
+
+## Añadiendo leyenda
+
+```{r message=FALSE,warning=FALSE,fig.align='center'}
+
+#Leyenda
+m <- leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(data =mapa1, lat = ~Latitud, lng =~Longitud,
+                   color = ~paleta(Provincia), fill = 1,popup =paste(sep="<br>","<br><strong>Provincia:</strong>",mapa1$Provincia,
+                                                                     "<br><strong>Capital:</strong>",mapa1$Capital,"<br><strong>Distritos:</strong>",mapa1$Distrito) )%>%
+  addMiniMap()%>%
+  addResetMapButton()
+m <- m %>% 
+  addLegend(data = mapa1, position =  "bottomleft", pal = paleta,
+            values = ~Provincia, title = "Provincias", opacity = 1,
+            group = "Leyenda")
+m
+```
